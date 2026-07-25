@@ -52,10 +52,20 @@
                 <button class="btn secondary" data-go="quiz">開始 10 題練習</button>
               </div>
             </div>
-            <div class="hero-visual" aria-hidden="true">
-              <div class="ring"><span id="heroPercent">0%</span><small>教材完成</small></div>
-              <div class="floating-card fc1">Part 5<br><b>秒判規則</b></div>
-              <div class="floating-card fc2">答錯<br><b>立即解析</b></div>
+            <div class="hero-visual" aria-label="快速開始">
+              <div class="ring" aria-label="教材完成度"><span id="heroPercent">0%</span><small>教材完成</small></div>
+              <button type="button" class="hero-shortcut hs-learn" id="heroPart5Btn" aria-label="開始學習 Part 5 詞性秒判">
+                <span class="hero-shortcut-kicker">PART 5</span>
+                <span class="hero-shortcut-title">開始學習</span>
+                <span class="hero-shortcut-detail">從詞性秒判開始</span>
+                <span class="hero-shortcut-arrow" aria-hidden="true">→</span>
+              </button>
+              <button type="button" class="hero-shortcut hs-practice" id="heroPracticeBtn" aria-label="開始十題混合練習，作答後立即解析">
+                <span class="hero-shortcut-kicker">10 題練習</span>
+                <span class="hero-shortcut-title">立即作答</span>
+                <span class="hero-shortcut-detail">每題作答後看解析</span>
+                <span class="hero-shortcut-arrow" aria-hidden="true">→</span>
+              </button>
             </div>
           </div>
 

@@ -739,6 +739,8 @@
     $('#quizModule').onchange = updateQuizAvailability;
     $('#quizCount').onchange = updateQuizAvailability;
     $('#continueBtn').onclick = () => openModule(state.lastModule || modules[0]?.id);
+    $('#heroPart5Btn').onclick = () => openModule('pos');
+    $('#heroPracticeBtn').onclick = () => startQuiz('mixed', 10);
     $('#clearWrongBtn').onclick = () => {
       if (state.wrongIds.length && confirm('確定要清空所有錯題嗎？')) {
         state.wrongIds = [];
