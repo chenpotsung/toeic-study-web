@@ -10,6 +10,7 @@
     masteredCards: [],
     lastModule: 'priority',
     visits: [],
+    dailyActivity: {},
     theme: 'light'
   };
 
@@ -47,6 +48,22 @@
       });
     }
 
+    const normalizedDaily = {};
+    if (raw.dailyActivity && typeof raw.dailyActivity === 'object' && !Array.isArray(raw.dailyActivity)) {
+      Object.entries(raw.dailyActivity)
+        .filter(([date]) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-60)
+        .forEach(([date, item]) => {
+          if (!item || typeof item !== 'object') return;
+          normalizedDaily[date] = {
+            answers: Math.max(0, Number(item.answers) || 0),
+            wrongReviews: Math.max(0, Number(item.wrongReviews) || 0),
+            modules: uniqueValid(item.modules, validModuleIds)
+          };
+        });
+    }
+
     return {
       ...defaultState,
       completed: uniqueValid(raw.completed, validModuleIds),
@@ -57,6 +74,7 @@
       visits: [...new Set(Array.isArray(raw.visits) ? raw.visits : [])]
         .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
         .slice(-120),
+      dailyActivity: normalizedDaily,
       theme: raw.theme === 'dark' ? 'dark' : 'light'
     };
   }
@@ -112,6 +130,151 @@
       cursor.setDate(cursor.getDate() - 1);
     }
     return count;
+  }
+
+  function getDailyActivity(date = today()) {
+    const item = state.dailyActivity?.[date];
+    return item || { answers: 0, wrongReviews: 0, modules: [] };
+  }
+
+  function ensureDailyActivity(date = today()) {
+    if (!state.dailyActivity || typeof state.dailyActivity !== 'object') state.dailyActivity = {};
+    if (!state.dailyActivity[date]) {
+      state.dailyActivity[date] = { answers: 0, wrongReviews: 0, modules: [] };
+    }
+    return state.dailyActivity[date];
+  }
+
+  function rankedModules() {
+    return modules
+      .filter((module) => module.id !== 'priority' && module.id !== 'checklist')
+      .map((module) => {
+        const moduleQuestions = questions.filter((question) => question.module === module.id);
+        let attempts = 0;
+        let correct = 0;
+        moduleQuestions.forEach((question) => {
+          const log = state.answerLog[question.id];
+          if (!log) return;
+          attempts += log.attempts || 0;
+          correct += log.correct || 0;
+        });
+        const accuracy = attempts ? correct / attempts : null;
+        const score = (module.priority * 2)
+          + (state.completed.includes(module.id) ? -3 : 2)
+          + (accuracy !== null ? (1 - accuracy) * 8 : 0);
+        return { module, score, accuracy, attempts };
+      })
+      .sort((a, b) => b.score - a.score);
+  }
+
+  function nextStudyModule() {
+    return rankedModules().find((item) => !state.completed.includes(item.module.id))?.module
+      || modules.find((module) => !state.completed.includes(module.id))
+      || moduleById(state.lastModule)
+      || modules[0];
+  }
+
+  function setGoalState(selector, completed, active = false, optional = false) {
+    const element = $(selector);
+    if (!element) return;
+    element.classList.toggle('completed', completed);
+    element.classList.toggle('active', active && !completed);
+    element.classList.toggle('optional', optional);
+  }
+
+  function refreshTodayPlan() {
+    const activity = getDailyActivity();
+    const lessonDone = activity.modules.length > 0;
+    const practiceCount = Math.min(activity.answers, 10);
+    const practiceDone = practiceCount >= 10;
+    const hasReviewGoal = state.wrongIds.length > 0 || activity.wrongReviews > 0;
+    const reviewTarget = hasReviewGoal ? 3 : 0;
+    const reviewCount = Math.min(activity.wrongReviews, reviewTarget || 0);
+    const reviewDone = practiceDone && (!hasReviewGoal || reviewCount >= reviewTarget || state.wrongIds.length === 0);
+
+    const reviewScore = reviewDone ? 1 : (practiceDone && hasReviewGoal ? reviewCount / reviewTarget : 0);
+    const goalScores = [lessonDone ? 1 : 0, practiceCount / 10, reviewScore];
+    const dailyPercent = Math.round((goalScores.reduce((sum, value) => sum + value, 0) / goalScores.length) * 100);
+
+    $('#todayPercent').textContent = `${dailyPercent}%`;
+    $('#todayRing')?.style.setProperty('--progress', `${dailyPercent}%`);
+    $('#sideProgress').style.width = `${dailyPercent}%`;
+    $('#sideProgressText').textContent = dailyPercent ? `今日已完成 ${dailyPercent}%` : '今天尚未開始';
+    $('#todayDate').textContent = new Date().toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' });
+
+    $('#todayLessonText').textContent = lessonDone
+      ? `已完成：${moduleTitle(activity.modules[activity.modules.length - 1])}`
+      : '完成一個高頻章節';
+    $('#todayPracticeText').textContent = `${practiceCount} / 10 題`;
+    $('#todayReviewText').textContent = !practiceDone
+      ? '完成練習後自動整理'
+      : hasReviewGoal
+        ? (reviewDone ? '今日錯題已整理' : `已複習 ${reviewCount} / ${reviewTarget} 題，尚有 ${state.wrongIds.length} 題`)
+        : '今天沒有錯題';
+
+    setGoalState('#todayLessonGoal', lessonDone, !lessonDone);
+    setGoalState('#todayPracticeGoal', practiceDone, lessonDone && !practiceDone);
+    setGoalState('#todayReviewGoal', reviewDone, practiceDone && !reviewDone, !practiceDone);
+
+    const button = $('#todayActionBtn');
+    const focusTitle = $('#todayFocusTitle');
+    const focusMeta = $('#todayFocusMeta');
+    const headline = $('#todayHeadline');
+    const summary = $('#todaySummary');
+    const time = $('#todayTime');
+    if (!button || !focusTitle || !focusMeta) return;
+
+    if (!lessonDone) {
+      const target = nextStudyModule();
+      headline.innerHTML = '今天先完成一個章節，<br><em>再用題目確認是否真的學會。</em>';
+      summary.textContent = '不用自己找內容，系統已依高頻程度與目前紀錄排好今天的第一步。';
+      focusTitle.textContent = target?.title || '考前優先順序';
+      focusMeta.textContent = target ? `${target.subtitle} · 約 ${target.estimated} 分鐘` : '先建立作答判斷順序';
+      button.textContent = '開始今日章節';
+      button.dataset.action = 'lesson';
+      button.dataset.module = target?.id || modules[0]?.id || '';
+      button.dataset.count = '';
+      time.textContent = target ? `預計 ${target.estimated} 分鐘` : '約 10 分鐘';
+      return;
+    }
+
+    if (!practiceDone) {
+      const remaining = 10 - practiceCount;
+      headline.innerHTML = '章節已完成，<br><em>現在用練習把觀念固定下來。</em>';
+      summary.textContent = '每題作答後立即看解析；答錯的題目會自動加入錯題本。';
+      focusTitle.textContent = `完成剩餘 ${remaining} 題練習`;
+      focusMeta.textContent = '混合文法與商務字彙，完成後更新今日進度';
+      button.textContent = `開始剩餘 ${remaining} 題`;
+      button.dataset.action = 'practice';
+      button.dataset.count = String(remaining);
+      button.dataset.module = '';
+      time.textContent = `約 ${Math.max(3, Math.ceil(remaining * 0.8))} 分鐘`;
+      return;
+    }
+
+    if (!reviewDone) {
+      const remaining = Math.max(1, reviewTarget - reviewCount);
+      headline.innerHTML = '今日練習已達標，<br><em>最後把錯題整理乾淨。</em>';
+      summary.textContent = '重新答對比只看答案更有效；完成後今天的學習流程就結束。';
+      focusTitle.textContent = `複習 ${remaining} 題錯題`;
+      focusMeta.textContent = `錯題本目前有 ${state.wrongIds.length} 題待處理`;
+      button.textContent = '開始錯題複習';
+      button.dataset.action = 'wrong';
+      button.dataset.count = String(remaining);
+      button.dataset.module = '';
+      time.textContent = '約 3–5 分鐘';
+      return;
+    }
+
+    headline.innerHTML = '今天的目標已完成，<br><em>穩定累積比一次讀很多更重要。</em>';
+    summary.textContent = '教材、練習與錯題流程都已完成；可以休息，或再加練一回保持手感。';
+    focusTitle.textContent = '今日學習完成';
+    focusMeta.textContent = `已作答 ${activity.answers} 題 · 連續學習 ${streak()} 天`;
+    button.textContent = '再加練 10 題';
+    button.dataset.action = 'extra';
+    button.dataset.count = '10';
+    button.dataset.module = '';
+    time.textContent = '選擇性加練';
   }
 
   function escapeHTML(value) {
@@ -179,6 +342,7 @@
     $$('.nav-item').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
     $('#sidebar')?.classList.remove('open');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (view === 'dashboard') refreshTodayPlan();
     if (view === 'course') renderCourseNav();
     if (view === 'mistakes') renderMistakes();
     if (view === 'flashcards') initFlashcards();
@@ -195,15 +359,12 @@
     $('#statAnswers').textContent = totalAnswers;
     $('#statAccuracy').textContent = totalAnswers ? `${Math.round((correctAnswers / totalAnswers) * 100)}%` : '—';
     $('#statStreak').textContent = `${streak()} 天`;
-    $('#heroPercent').textContent = `${percentage}%`;
-    $('.ring')?.style.setProperty('--progress', `${percentage}%`);
     $('#coursePercent').textContent = `${percentage}%`;
-    $('#sideProgress').style.width = `${percentage}%`;
-    $('#sideProgressText').textContent = percentage ? `已完成 ${percentage}%` : '尚未開始';
     $('#wrongBadge').textContent = state.wrongIds.length;
     $('#quickWrongText').textContent = state.wrongIds.length ? `${state.wrongIds.length} 題等待複習` : '目前沒有錯題';
     $('#flashMastered').textContent = state.masteredCards.length;
 
+    refreshTodayPlan();
     renderRecommendations();
     renderModulePreview();
   }
@@ -212,26 +373,7 @@
     const element = $('#recommendations');
     if (!element) return;
 
-    const scored = modules
-      .filter((module) => module.id !== 'priority' && module.id !== 'checklist')
-      .map((module) => {
-        const moduleQuestions = questions.filter((question) => question.module === module.id);
-        let attempts = 0;
-        let correct = 0;
-        moduleQuestions.forEach((question) => {
-          const log = state.answerLog[question.id];
-          if (!log) return;
-          attempts += log.attempts || 0;
-          correct += log.correct || 0;
-        });
-        const accuracy = attempts ? correct / attempts : null;
-        const score = (module.priority * 2)
-          + (state.completed.includes(module.id) ? -3 : 2)
-          + (accuracy !== null ? (1 - accuracy) * 8 : 0);
-        return { module, score, accuracy, attempts };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
+    const scored = rankedModules().slice(0, 3);
 
     element.innerHTML = scored.map((item, index) => `
       <button type="button" class="recommendation" data-module="${item.module.id}">
@@ -347,10 +489,13 @@
   }
 
   function toggleComplete(id) {
+    const activity = ensureDailyActivity();
     if (state.completed.includes(id)) {
       state.completed = state.completed.filter((item) => item !== id);
+      activity.modules = activity.modules.filter((item) => item !== id);
     } else {
       state.completed.push(id);
+      if (!activity.modules.includes(id)) activity.modules.push(id);
     }
     saveState();
     renderLesson(id);
@@ -512,6 +657,10 @@
     } else if (!state.wrongIds.includes(question.id)) {
       state.wrongIds.push(question.id);
     }
+
+    const activity = ensureDailyActivity();
+    activity.answers += 1;
+    if (session.mode === 'wrong') activity.wrongReviews += 1;
     saveState();
   }
 
@@ -738,9 +887,14 @@
     );
     $('#quizModule').onchange = updateQuizAvailability;
     $('#quizCount').onchange = updateQuizAvailability;
-    $('#continueBtn').onclick = () => openModule(state.lastModule || modules[0]?.id);
-    $('#heroPart5Btn').onclick = () => openModule('pos');
-    $('#heroPracticeBtn').onclick = () => startQuiz('mixed', 10);
+    $('#todayActionBtn').onclick = () => {
+      const button = $('#todayActionBtn');
+      const action = button.dataset.action;
+      const count = Math.max(1, Number(button.dataset.count) || 10);
+      if (action === 'lesson') openModule(button.dataset.module || nextStudyModule()?.id);
+      else if (action === 'wrong') startQuiz('wrong', count);
+      else startQuiz('mixed', count);
+    };
     $('#clearWrongBtn').onclick = () => {
       if (state.wrongIds.length && confirm('確定要清空所有錯題嗎？')) {
         state.wrongIds = [];

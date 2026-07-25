@@ -22,7 +22,7 @@
         <button class="nav-item" data-view="mistakes"><span>!</span>錯題本 <b id="wrongBadge">0</b></button>
       </nav>
       <div class="sidebar-card">
-        <div class="sidebar-card-label">教材進度</div>
+        <div class="sidebar-card-label">今日進度</div>
         <div class="mini-progress"><span id="sideProgress"></span></div>
         <p id="sideProgressText">尚未開始</p>
       </div>
@@ -42,31 +42,46 @@
 
       <main id="mainContent">
         <section class="view active" id="view-dashboard">
-          <div class="hero-card">
+          <div class="hero-card learning-hero">
             <div class="hero-copy">
-              <span class="eyebrow">PERSONAL TOEIC STUDY</span>
-              <h1>把規則學會，<br><em>再把錯題變成分數。</em></h1>
-              <p>依照多益 Part 5 高頻順序整理，先用秒判規則建立觀念，再用題目立即驗證。</p>
+              <span class="eyebrow">TODAY'S LEARNING PLAN</span>
+              <h1 id="todayHeadline">今天完成一小步，<br><em>就比昨天更接近目標。</em></h1>
+              <p id="todaySummary">系統會依教材進度、作答紀錄與錯題，自動安排最值得先做的下一步。</p>
+              <div class="today-focus-card" aria-live="polite">
+                <span>建議下一步</span>
+                <strong id="todayFocusTitle">準備今日學習內容…</strong>
+                <small id="todayFocusMeta">讀取學習進度中</small>
+              </div>
               <div class="hero-actions">
-                <button class="btn primary" id="continueBtn">繼續上次學習</button>
-                <button class="btn secondary" data-go="quiz">開始 10 題練習</button>
+                <button class="btn primary" id="todayActionBtn">開始今日學習</button>
+                <span class="hero-time" id="todayTime">約 15–25 分鐘</span>
               </div>
             </div>
-            <div class="hero-visual" aria-label="快速開始">
-              <div class="ring" aria-label="教材完成度"><span id="heroPercent">0%</span><small>教材完成</small></div>
-              <button type="button" class="hero-shortcut hs-learn" id="heroPart5Btn" aria-label="開始學習 Part 5 詞性秒判">
-                <span class="hero-shortcut-kicker">PART 5</span>
-                <span class="hero-shortcut-title">開始學習</span>
-                <span class="hero-shortcut-detail">從詞性秒判開始</span>
-                <span class="hero-shortcut-arrow" aria-hidden="true">→</span>
-              </button>
-              <button type="button" class="hero-shortcut hs-practice" id="heroPracticeBtn" aria-label="開始十題混合練習，作答後立即解析">
-                <span class="hero-shortcut-kicker">10 題練習</span>
-                <span class="hero-shortcut-title">立即作答</span>
-                <span class="hero-shortcut-detail">每題作答後看解析</span>
-                <span class="hero-shortcut-arrow" aria-hidden="true">→</span>
-              </button>
-            </div>
+            <aside class="today-plan-panel" aria-label="今日學習目標">
+              <div class="today-plan-head">
+                <div><span class="eyebrow">DAILY GOAL</span><h2>今日學習</h2></div>
+                <span class="today-date" id="todayDate"></span>
+              </div>
+              <div class="today-progress-wrap">
+                <div class="ring today-ring" id="todayRing" aria-label="今日目標完成度">
+                  <span id="todayPercent">0%</span><small>今日完成</small>
+                </div>
+              </div>
+              <div class="today-checklist">
+                <div class="today-goal" id="todayLessonGoal">
+                  <span class="goal-state" id="todayLessonState">1</span>
+                  <div><b>完成 1 個章節</b><small id="todayLessonText">尚未完成</small></div>
+                </div>
+                <div class="today-goal" id="todayPracticeGoal">
+                  <span class="goal-state" id="todayPracticeState">2</span>
+                  <div><b>完成 10 題練習</b><small id="todayPracticeText">0 / 10 題</small></div>
+                </div>
+                <div class="today-goal" id="todayReviewGoal">
+                  <span class="goal-state" id="todayReviewState">3</span>
+                  <div><b>整理今日錯題</b><small id="todayReviewText">目前沒有待複習錯題</small></div>
+                </div>
+              </div>
+            </aside>
           </div>
 
           <div class="stats-grid">
@@ -78,11 +93,11 @@
 
           <div class="dashboard-grid">
             <section class="panel recommendation-panel">
-              <div class="panel-head"><div><span class="eyebrow">SMART REVIEW</span><h2>今天建議學什麼</h2></div><button class="text-btn" data-go="course">查看全部 →</button></div>
+              <div class="panel-head"><div><span class="eyebrow">SMART REVIEW</span><h2>優先補強</h2></div><button class="text-btn" data-go="course">查看全部 →</button></div>
               <div id="recommendations" class="recommendations"></div>
             </section>
             <section class="panel quick-panel">
-              <div class="panel-head"><div><span class="eyebrow">QUICK PRACTICE</span><h2>快速練習</h2></div></div>
+              <div class="panel-head"><div><span class="eyebrow">LEARNING TOOLS</span><h2>學習工具</h2></div></div>
               <button class="quick-action" data-quick="mixed"><span class="qa-icon">10</span><div><b>混合練習</b><small>隨機 10 題，涵蓋文法與字彙</small></div><i>›</i></button>
               <button class="quick-action" data-go="mistakes"><span class="qa-icon">!</span><div><b>複習錯題</b><small id="quickWrongText">目前沒有錯題</small></div><i>›</i></button>
               <button class="quick-action" data-go="flashcards"><span class="qa-icon">Aa</span><div><b>單字快閃卡</b><small>用短時間強化商務搭配</small></div><i>›</i></button>
