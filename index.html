@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="TOEIC 多益文法與高頻字彙互動自學教材">
+  <title>TOEIC 自學教室｜文法與高頻字彙</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">T</div>
+        <div><strong>TOEIC 自學教室</strong><span>文法 × 字彙 × 練習</span></div>
+      </div>
+      <nav class="main-nav" aria-label="主要導覽">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span>學習首頁</button>
+        <button class="nav-item" data-view="course"><span>▤</span>教材章節</button>
+        <button class="nav-item" data-view="quiz"><span>✓</span>互動練習</button>
+        <button class="nav-item" data-view="flashcards"><span>▣</span>單字卡</button>
+        <button class="nav-item" data-view="mistakes"><span>!</span>錯題本 <b id="wrongBadge">0</b></button>
+      </nav>
+      <div class="sidebar-card">
+        <div class="sidebar-card-label">今日進度</div>
+        <div class="mini-progress"><span id="sideProgress"></span></div>
+        <p id="sideProgressText">尚未開始</p>
+      </div>
+      <div class="sidebar-footer">進度儲存在此瀏覽器<br>可離線使用</div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menuBtn" aria-label="開啟選單">☰</button>
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input id="globalSearch" type="search" placeholder="搜尋文法、單字或片語…" autocomplete="off">
+          <div class="search-results" id="searchResults" hidden></div>
+        </div>
+        <button class="icon-btn" id="themeBtn" aria-label="切換深色模式">◐</button>
+      </header>
+
+      <main id="mainContent">
+        <section class="view active" id="view-dashboard">
+          <div class="hero-card">
+            <div class="hero-copy">
+              <span class="eyebrow">PERSONAL TOEIC STUDY</span>
+              <h1>把規則學會，<br><em>再把錯題變成分數。</em></h1>
+              <p>依照多益 Part 5 高頻順序整理，先用秒判規則建立觀念，再用題目立即驗證。</p>
+              <div class="hero-actions">
+                <button class="btn primary" id="continueBtn">繼續上次學習</button>
+                <button class="btn secondary" data-go="quiz">開始 10 題練習</button>
+              </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <div class="ring"><span id="heroPercent">0%</span><small>教材完成</small></div>
+              <div class="floating-card fc1">Part 5<br><b>秒判規則</b></div>
+              <div class="floating-card fc2">答錯<br><b>立即解析</b></div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card"><span>完成章節</span><strong id="statModules">0 / 22</strong><small>按自己的速度前進</small></article>
+            <article class="stat-card"><span>累積答題</span><strong id="statAnswers">0</strong><small>每次作答都會記錄</small></article>
+            <article class="stat-card"><span>整體正確率</span><strong id="statAccuracy">—</strong><small>含所有練習紀錄</small></article>
+            <article class="stat-card"><span>連續學習</span><strong id="statStreak">1 天</strong><small>每天學一小段即可</small></article>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel recommendation-panel">
+              <div class="panel-head"><div><span class="eyebrow">SMART REVIEW</span><h2>今天建議學什麼</h2></div><button class="text-btn" data-go="course">查看全部 →</button></div>
+              <div id="recommendations" class="recommendations"></div>
+            </section>
+            <section class="panel quick-panel">
+              <div class="panel-head"><div><span class="eyebrow">QUICK PRACTICE</span><h2>快速練習</h2></div></div>
+              <button class="quick-action" data-quick="mixed"><span class="qa-icon">10</span><div><b>混合練習</b><small>隨機 10 題，涵蓋文法與字彙</small></div><i>›</i></button>
+              <button class="quick-action" data-go="mistakes"><span class="qa-icon">!</span><div><b>複習錯題</b><small id="quickWrongText">目前沒有錯題</small></div><i>›</i></button>
+              <button class="quick-action" data-go="flashcards"><span class="qa-icon">Aa</span><div><b>單字快閃卡</b><small>用短時間強化商務搭配</small></div><i>›</i></button>
+            </section>
+          </div>
+
+          <section class="panel module-preview-panel">
+            <div class="panel-head"><div><span class="eyebrow">LEARNING PATH</span><h2>高頻學習路徑</h2></div><button class="text-btn" data-go="course">進入教材 →</button></div>
+            <div class="module-grid" id="modulePreview"></div>
+          </section>
+        </section>
+
+        <section class="view" id="view-course">
+          <div class="page-heading"><div><span class="eyebrow">COURSE</span><h1>教材章節</h1><p>建議先完成 ★★★ 章節，再進入字彙與進階補充。</p></div><div class="heading-progress"><b id="coursePercent">0%</b><span>整體完成度</span></div></div>
+          <div class="course-layout">
+            <aside class="course-nav" id="courseNav"></aside>
+            <article class="lesson" id="lessonArticle">
+              <div class="lesson-empty"><span>▤</span><h2>選擇一個章節開始</h2><p>左側章節依照多益高頻順序排列。</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-quiz">
+          <div id="quizSetup">
+            <div class="page-heading"><div><span class="eyebrow">PRACTICE</span><h1>互動練習</h1><p>選擇練習範圍，答題後會立即顯示解析並自動收錄錯題。</p></div></div>
+            <div class="quiz-setup-grid">
+              <section class="panel setup-panel">
+                <h2>1. 選擇模式</h2>
+                <div class="mode-grid">
+                  <label class="mode-card selected"><input type="radio" name="quizMode" value="mixed" checked><span>混合練習</span><small>從所有章節隨機出題</small></label>
+                  <label class="mode-card"><input type="radio" name="quizMode" value="module"><span>指定章節</span><small>針對單一弱點練習</small></label>
+                  <label class="mode-card"><input type="radio" name="quizMode" value="wrong"><span>錯題複習</span><small>只練曾經答錯的題目</small></label>
+                </div>
+              </section>
+              <section class="panel setup-panel">
+                <h2>2. 設定範圍</h2>
+                <label class="field"><span>指定章節</span><select id="quizModule"></select></label>
+                <label class="field"><span>題目數量</span><select id="quizCount"><option value="5">5 題</option><option value="10" selected>10 題</option><option value="20">20 題</option><option value="999">全部可用題目</option></select></label>
+                <button class="btn primary wide" id="startQuizBtn">開始練習</button>
+                <p class="setup-hint" id="quizAvailability"></p>
+              </section>
+            </div>
+          </div>
+          <div id="quizRunner" hidden></div>
+        </section>
+
+        <section class="view" id="view-flashcards">
+          <div class="page-heading"><div><span class="eyebrow">FLASHCARDS</span><h1>單字快閃卡</h1><p>先看英文回想中文，再翻牌核對搭配與例句。</p></div></div>
+          <div class="flash-layout">
+            <aside class="panel flash-controls">
+              <label class="field"><span>分類</span><select id="flashCategory"></select></label>
+              <div class="flash-stats"><b id="flashMastered">0</b><span>已熟悉字卡</span></div>
+              <button class="btn secondary wide" id="shuffleFlash">重新洗牌</button>
+            </aside>
+            <section class="flash-stage">
+              <button class="flashcard" id="flashcard" aria-label="翻轉字卡">
+                <div class="flash-inner">
+                  <div class="flash-front"><span id="flashCat"></span><strong id="flashTerm">Loading…</strong><small>點一下翻面</small></div>
+                  <div class="flash-back"><strong id="flashMeaning"></strong><p id="flashExample"></p><small>再次點擊可翻回正面</small></div>
+                </div>
+              </button>
+              <div class="flash-actions">
+                <button class="btn secondary" id="prevFlash">← 上一張</button>
+                <button class="btn success" id="masterFlash">標記已熟悉</button>
+                <button class="btn primary" id="nextFlash">下一張 →</button>
+              </div>
+              <div class="flash-counter" id="flashCounter"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="view-mistakes">
+          <div class="page-heading"><div><span class="eyebrow">WRONG ANSWERS</span><h1>錯題本</h1><p>答錯的題目會自動保留；重新答對後可從錯題本移除。</p></div><button class="btn secondary" id="clearWrongBtn">清空錯題</button></div>
+          <div id="mistakeList" class="mistake-list"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
