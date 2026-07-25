@@ -1,24 +1,45 @@
-# TOEIC 自學教室（Web 版）
+# TOEIC 互動自學教材 Web 版
 
-## 使用方式
+目前版本：v1.1 修正版
 
-1. 最簡單：直接雙擊 `TOEIC自學教室_單檔版.html`。
-2. GitHub Pages 版本則使用 `index.html`、`styles.css`、`data.js`、`app.js`。
-3. 所有章節完成進度、答題紀錄、錯題本與字卡熟悉狀態，都會儲存在目前瀏覽器的 localStorage。
-4. 若要放到 GitHub Pages，將整個資料夾內容上傳至 GitHub repository 根目錄，再開啟 Pages 即可。
+## 直接離線使用
 
-## 功能
+雙擊：
 
-- 22 個整合教材章節
-- 70+ 題原創選擇題
-- 答題後即時顯示正解、解析與秒判提示
-- 錯題本與重新練習
-- 商務字彙快閃卡
-- 教材全文搜尋
-- 學習完成度、答題數、正確率與連續學習紀錄
-- 深色模式與手機版排版
+`TOEIC自學教室_單檔版.html`
 
-## 資料來源
+所有教材、題庫、樣式與功能都放在同一個 HTML 檔案內。
 
-- `sources/多益常考文法大全彙整.md`
-- `sources/多益文法與字彙學習版.md`
+## 部署到 GitHub Pages
+
+請把本資料夾內的檔案全部上傳到 GitHub Repository 的最外層，確保 Repository 首頁直接看得到：
+
+- `index.html`
+- `styles.css`
+- `data.js`
+- `app.js`
+
+接著前往：
+
+`Settings → Pages → Deploy from a branch → main → /(root) → Save`
+
+不要只上傳 ZIP，也不要讓結構變成 `toeic-study-web/toeic-study-web/index.html`。
+
+## 學習紀錄
+
+進度使用瀏覽器 `localStorage` 儲存：
+
+- 同一個網址、同一個瀏覽器會保留進度。
+- 不同瀏覽器或不同裝置不會自動同步。
+- 更新網站檔案通常不會刪除既有進度。
+- 清除瀏覽器網站資料可能會清除進度。
+
+## 檔案說明
+
+- `index.html`：網站首頁與版面結構
+- `styles.css`：視覺與手機版樣式
+- `data.js`：22 個教材章節、85 題練習、40 張單字卡
+- `app.js`：進度、練習、錯題本、搜尋與單字卡功能
+- `TOEIC自學教室_單檔版.html`：可直接離線開啟的單檔版
+- `REVIEW_LOG.md`：本次完整檢查及修正紀錄
+- `sources/`：原始教材資料
